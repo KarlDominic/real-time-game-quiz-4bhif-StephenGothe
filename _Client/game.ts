@@ -1,9 +1,12 @@
-import { Game, Tilemap, TilemapLayer, Sprite } from "phaser-ce";
-import { sendCoor } from './client';
+import { Game, Tilemap, TilemapLayer, Sprite, Group } from "phaser-ce";
+import { sendCoor, sendDeath, sendRevive } from './client';
 import { enemy } from "./enemy";
 
 export var player: Sprite;
 export var enemys: enemy[] = new Array();
+
+var btn:HTMLElement = document.getElementById("revive");
+btn.onclick = function() {PlayerRevive()};
 
 var game: Game;
 var map: Tilemap;
@@ -15,6 +18,8 @@ const playerGravity: number = 900;
 
 var canJump: boolean;
 var onWall: boolean;
+
+var enemysGroup: Group;
 
 class JaRGame {
 
@@ -60,6 +65,10 @@ class JaRGame {
 
         onWall = false;
 
+        enemysGroup = game.add.group();
+        enemysGroup.enableBody = true;
+        enemysGroup.physicsBodyType = Phaser.Physics.ARCADE;
+
         game.input.onDown.add(JaRGame.prototype.handleJump);
     }
 
@@ -104,12 +113,27 @@ class JaRGame {
             player.body.velocity.x = playerSpeed * player.scale.x;
         }, null, this);
 
+        game.physics.arcade.collide(player, enemysGroup, function (player, enemy) {
+            if (enemy.body.touching.up && player.body.touching.down) {
+                enemy.health = 0;
+            }
+            else if(enemy.body.touching.right && player.body.touching.left)
+            {
+                player.scale.x = 1;
+            }
+            else if(enemy.body.touching.left && player.body.touching.right)
+            {
+                player.scale.x = -1;
+            }
+        }, null, this);
+
         sendCoor();
+        sendDeath();
 
         //new Enemy
         for (let i: number = 0; i < enemys.length; i++) {
             if (enemys[i].char == null) {
-                enemys[i].char = game.add.sprite(game.width / 2, 440, "enemy");
+                enemys[i].char = enemysGroup.create(game.width / 2, 440, "enemy");
                 enemys[i].char.anchor.set(0.5);
             }
         }
@@ -139,6 +163,12 @@ class JaRGame {
             onWall = false;
         }
     }
+}
+
+function PlayerRevive()
+{
+    player.revive();
+    sendRevive();
 }
 
 window.onload = () => {

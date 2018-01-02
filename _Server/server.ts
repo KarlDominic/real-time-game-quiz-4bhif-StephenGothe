@@ -22,6 +22,14 @@ sio(server).on('connection', function(socket) {
     socket.broadcast.emit('cor', data);
     //console.log(`id: ${data.id}, x: ${data.x}, y: ${data.y}`);
   });
+  socket.on('death', function(data) {
+    socket.broadcast.emit('death', data);
+    console.log(`Player ${data.killer}. hat Player ${data.victom}. getötet!`);
+  });
+  socket.on('revive', function(data) {
+    socket.broadcast.emit('revive', data);
+    console.log(`Player ${data}. wurde wiederbelebt.`);
+  });
   socket.on('disconnect', () => {
     socket.broadcast.emit('left', id);
 });

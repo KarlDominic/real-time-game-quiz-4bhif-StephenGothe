@@ -26,6 +26,25 @@ socket.on('cor', function (data) {
         game_1.enemys.push(newPlayer);
     }
 });
+socket.on('death', function (data) {
+    if (data.victom == id) {
+        game_1.player.kill();
+    }
+    else {
+        for (let i = 0; i < game_1.enemys.length; i++) {
+            if (game_1.enemys[i].id == data.victom) {
+                game_1.enemys[i].char.kill();
+            }
+        }
+    }
+});
+socket.on('revive', function (message) {
+    for (let i = 0; i < game_1.enemys.length; i++) {
+        if (game_1.enemys[i].id == message) {
+            game_1.enemys[i].char.revive();
+        }
+    }
+});
 socket.on('left', function (message) {
     console.log("Player " + message + ". left!");
     for (let i = 0; i < game_1.enemys.length; i++) {
@@ -39,6 +58,20 @@ socket.on('left', function (message) {
 function joinServer() {
     socket.emit('join', '');
 }
+function sendDeath() {
+    for (let i = 0; i < game_1.enemys.length; i++) {
+        if (game_1.enemys[i].char != null && game_1.enemys[i].char.health == 0) {
+            game_1.enemys[i].char.kill();
+            socket.emit('death', { "killer": id, "victom": game_1.enemys[i].id });
+            game_1.enemys[i].char.health = 1;
+        }
+    }
+}
+exports.sendDeath = sendDeath;
+function sendRevive() {
+    socket.emit('revive', id);
+}
+exports.sendRevive = sendRevive;
 function sendCoor() {
     socket.emit('cor', { "id": id, "x": game_1.player.x, "y": game_1.player.y });
 }
@@ -56,6 +89,8 @@ exports.enemy = enemy;
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("./client");
 exports.enemys = new Array();
+var btn = document.getElementById("revive");
+btn.onclick = function () { PlayerRevive(); };
 var game;
 var map;
 var layer;
@@ -64,6 +99,7 @@ const playerJump = 400;
 const playerGravity = 900;
 var canJump;
 var onWall;
+var enemysGroup;
 class JaRGame {
     constructor() {
         game = new Phaser.Game(640, 480, Phaser.AUTO, 'content', { preload: this.preload, create: this.create, update: this.update });
@@ -93,6 +129,9 @@ class JaRGame {
         exports.player.body.velocity.x = playerSpeed;
         canJump = true;
         onWall = false;
+        enemysGroup = game.add.group();
+        enemysGroup.enableBody = true;
+        enemysGroup.physicsBodyType = Phaser.Physics.ARCADE;
         game.input.onDown.add(JaRGame.prototype.handleJump);
     }
     update() {
@@ -125,20 +164,23 @@ class JaRGame {
             // adjusting hero speed according to the direction it's moving
             player.body.velocity.x = playerSpeed * player.scale.x;
         }, null, this);
-        for (let i = 0; i < exports.enemys.length; i++) {
-            game.physics.arcade.collide(exports.player, exports.enemys[i].char, function (player, enemy) {
-                if (exports.enemys[i].char.body.touching.up && player.body.touching.down) {
-                }
-                else {
-                    player.body.velocity.y = -playerJump;
-                }
-            }, null, this);
-        }
+        game.physics.arcade.collide(exports.player, enemysGroup, function (player, enemy) {
+            if (enemy.body.touching.up && player.body.touching.down) {
+                enemy.health = 0;
+            }
+            else if (enemy.body.touching.right && player.body.touching.left) {
+                player.scale.x = 1;
+            }
+            else if (enemy.body.touching.left && player.body.touching.right) {
+                player.scale.x = -1;
+            }
+        }, null, this);
         client_1.sendCoor();
+        client_1.sendDeath();
         //new Enemy
         for (let i = 0; i < exports.enemys.length; i++) {
             if (exports.enemys[i].char == null) {
-                exports.enemys[i].char = game.add.sprite(game.width / 2, 440, "enemy");
+                exports.enemys[i].char = enemysGroup.create(game.width / 2, 440, "enemy");
                 exports.enemys[i].char.anchor.set(0.5);
             }
         }
@@ -160,6 +202,10 @@ class JaRGame {
             onWall = false;
         }
     }
+}
+function PlayerRevive() {
+    exports.player.revive();
+    client_1.sendRevive();
 }
 window.onload = () => {
     var game = new JaRGame();
