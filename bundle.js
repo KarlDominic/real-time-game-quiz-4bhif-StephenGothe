@@ -106,7 +106,7 @@ var onWall;
 var enemysGroup;
 class JaRGame {
     constructor() {
-        game = new Phaser.Game(640, 480, Phaser.AUTO, 'content', { preload: this.preload, create: this.create, update: this.update });
+        game = new Phaser.Game(640, 480, Phaser.CANVAS, 'content', { preload: this.preload, create: this.create, update: this.update });
     }
     preload() {
         game.stage.backgroundColor = 0x444444;
