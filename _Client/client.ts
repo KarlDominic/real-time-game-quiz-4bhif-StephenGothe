@@ -1,6 +1,6 @@
 declare const io: SocketIOStatic;
 
-import { player, enemys as enemies } from './game';
+import { player, enemys as enemies,btn } from './game';
 import { enemy } from './enemy';
 
 var id: number;
@@ -39,11 +39,13 @@ socket.on('cor', function (data) {
 socket.on('death', function (data) {
   if (data.victom == id) {
     player.kill();
+    btn.disabled = false;
   }
   else {
     for (let i: number = 0; i < enemies.length; i++) {
       if (enemies[i].id == data.victom) {
         enemies[i].char.kill();
+        enemies[i].char.destroy();
       }
     }
   }
@@ -54,7 +56,8 @@ socket.on('revive', function (message: number) {
 
     for (let i: number = 0; i < enemies.length; i++) {
       if (enemies[i].id == message) {
-        enemies[i].char.revive();
+        //enemies[i].char.revive();
+        enemies[i].char = null;
       }
     }
 });
@@ -81,6 +84,7 @@ export function sendDeath() {
   for (let i: number = 0; i < enemies.length; i++) {
     if (enemies[i].char != null && enemies[i].char.health == 0) {
       enemies[i].char.kill();
+      enemies[i].char.destroy();
       socket.emit('death', { "killer": id, "victom": enemies[i].id });
       enemies[i].char.health = 1;
     }

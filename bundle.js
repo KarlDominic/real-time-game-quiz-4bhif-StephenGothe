@@ -29,11 +29,13 @@ socket.on('cor', function (data) {
 socket.on('death', function (data) {
     if (data.victom == id) {
         game_1.player.kill();
+        game_1.btn.disabled = false;
     }
     else {
         for (let i = 0; i < game_1.enemys.length; i++) {
             if (game_1.enemys[i].id == data.victom) {
                 game_1.enemys[i].char.kill();
+                game_1.enemys[i].char.destroy();
             }
         }
     }
@@ -41,7 +43,8 @@ socket.on('death', function (data) {
 socket.on('revive', function (message) {
     for (let i = 0; i < game_1.enemys.length; i++) {
         if (game_1.enemys[i].id == message) {
-            game_1.enemys[i].char.revive();
+            //enemies[i].char.revive();
+            game_1.enemys[i].char = null;
         }
     }
 });
@@ -62,6 +65,7 @@ function sendDeath() {
     for (let i = 0; i < game_1.enemys.length; i++) {
         if (game_1.enemys[i].char != null && game_1.enemys[i].char.health == 0) {
             game_1.enemys[i].char.kill();
+            game_1.enemys[i].char.destroy();
             socket.emit('death', { "killer": id, "victom": game_1.enemys[i].id });
             game_1.enemys[i].char.health = 1;
         }
@@ -89,8 +93,8 @@ exports.enemy = enemy;
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("./client");
 exports.enemys = new Array();
-var btn = document.getElementById("revive");
-btn.onclick = function () { PlayerRevive(); };
+exports.btn = document.getElementById("revive");
+exports.btn.onclick = function () { PlayerRevive(); };
 var game;
 var map;
 var layer;
@@ -206,6 +210,7 @@ class JaRGame {
 function PlayerRevive() {
     exports.player.revive();
     client_1.sendRevive();
+    exports.btn.disabled = true;
 }
 window.onload = () => {
     var game = new JaRGame();

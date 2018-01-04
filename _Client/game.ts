@@ -5,7 +5,7 @@ import { enemy } from "./enemy";
 export var player: Sprite;
 export var enemys: enemy[] = new Array();
 
-var btn:HTMLElement = document.getElementById("revive");
+export var btn:HTMLButtonElement = <HTMLButtonElement>document.getElementById("revive");
 btn.onclick = function() {PlayerRevive()};
 
 var game: Game;
@@ -169,6 +169,7 @@ function PlayerRevive()
 {
     player.revive();
     sendRevive();
+    btn.disabled = true;
 }
 
 window.onload = () => {
